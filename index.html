@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="daniel.lincoln@autodesk.com">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-title" content="XR Annotations">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>XR Annotations</title>
+    <style>
+        html, body {background-color: #444; overflow: hidden; justify-content: center; height: 99%;}
+        div {text-align: center;} div.inline {display: flex; justify-content: center; text-align: center;}
+        button {width: 64px; height: 52px; margin: 4px; font-size: 10px; color: ghostwhite; text-align: center;touch-action: manipulation; user-select: none;
+                background-color: #000; font-family: system-ui; border-color: #333; border-radius: 10px; border-width: 2px; font-weight: bold;}
+        button.marker {width: 280px; height: 280px; justify-content: center; margin: 4px;}
+        button.black {background: #000;} button.black:active {background: ghostwhite; color: #000;}
+        button.red {background: #931f38;} button.red:active {background: #d74262;}
+        button.orange {background: #d9980d;} button.orange:active {background: #f5c356;}
+        button.green {background: #46a062;} button.green:active {background: #83c999;}
+        button.blue {background: #357397;} button.blue:active {background: #68a6ca;}
+        textarea {font-family: 'Courier New'; font-style: italic; font-size: 16px; margin: 4px; justify-content: center; color: ghostwhite;
+                  background-color: #111; border-color: #555; border-width: 2px; border-radius: 6px; resize: none; margin-bottom: 2px;} textarea:focus {outline: none;}
+        img.logo {width: 150px; justify-content: center;}
+        i {margin-top: 2px;}
+    </style>
+    <script src="https://dlincol1.github.io/xr_notes.js"></script>
+</head>
+<body onload="setAnnotationText('XR Annotations\n\nBy Autodesk Consulting');">
+    <div>
+        <a href="javascript:window.location.reload(true)"><img class="logo" src="Images/VRED-Professional-2024-lockup-Wht-OL-No-Year-1-line.png"></a>
+        <div class=inline>
+            <button class=marker onclick="vred_display_toggle()" ontouchstart><img class=marker id=logo width="100%" alt="" src="Images/autodesk-profile-icon-280x280.png"></button>
+        </div><div class=inline>
+            <textarea id="TEXTAREA" placeholder="" onclick="this.value=''" rows="3" cols="26"></textarea>
+        </div><div class=inline>
+            <button class=black onclick="toggle_vr_menu()" ontouchstart><i class=material-icons>menu</i></button>
+            <button class=black onclick="annotation_delete()" ontouchstart><i class=material-icons>delete</i></button>
+            <button class=black onclick="annotation_reposition()" ontouchstart><i class=material-icons>my_location</i></button>
+            <button class=black onclick="annotation_create(get_active_color())" ontouchstart><i class=material-icons>send</i></button>
+        </div>
+        <div class=inline>
+            <button class=red onclick="setAnnotationText(red_annotation, '#931f38', 'red')" ontouchstart></button>
+            <button class=green onclick="setAnnotationText(green_annotation, '#46a062', 'green')" ontouchstart></button>
+            <button class=blue onclick="setAnnotationText(blue_annotation, '#357397', 'blue')" ontouchstart></button>
+            <button class=orange onclick="setAnnotationText(orange_annotation, '#d9980d', 'orange')" ontouchstart></button>
+        <form id=FORM method=GET target=output><input type=hidden name=value id=PYTHON></form>
+        <iframe hidden name=output width=900 height=350></iframe>
+    </div>
+</body>
+</html>
