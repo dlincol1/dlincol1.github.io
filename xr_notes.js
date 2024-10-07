@@ -31,7 +31,7 @@ vrHMDService.setXRRenderMode(vrXRealityTypes.XRRenderMode.ModelOnly)`;
 display_mode = 'VR_DISPLAY_VARJO';
 } else if (display_mode === 'VR_DISPLAY_VARJO') {
     // setAnnotationText('Varjo marker tracking off.');
-    img.src = "Images/autodesk-profile-icon-280x280.png"
+    img.src = "autodesk-profile-icon-280x280.png"
 python = `setDisplayMode(VR_DISPLAY_STANDARD)
 print('Display mode: Standard')
 vr_marker_tool = vrImmersiveUiService.findTool('vrMarkerTool')
