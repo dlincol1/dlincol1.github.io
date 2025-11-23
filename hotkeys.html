@@ -260,6 +260,55 @@ body {
     margin-bottom: 4px;
 }
 
+.proxy-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--separator);
+    margin-top: 4px;
+}
+
+.proxy-toggle-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.proxy-toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    background: #1c1c1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.proxy-toggle-switch.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.proxy-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #D8D8D8;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.proxy-toggle-switch.active::after {
+    transform: translateX(22px);
+}
+
 .color-toggle-container {
     display: flex;
     align-items: center;
@@ -607,10 +656,11 @@ iframe {
                 <div class="mixed-content-warning" id="mixed-content-warning">
                     <strong>⚠️ Mixed Content Blocked</strong>
                     This page is served over HTTPS (GitHub Pages), but you're trying to connect to an HTTP server. Browsers block mixed content for security.<br><br>
-                    <strong>Solutions:</strong><br>
-                    • <strong>Download and serve locally:</strong> Download this HTML file and open it via <code>file://</code> or a local HTTP server<br>
-                    • <strong>Configure VRED server for HTTPS:</strong> Set up SSL/TLS on your VRED server and use the HTTPS protocol above<br>
-                    • <strong>Use a local web server:</strong> Serve this page from a local HTTP server (not GitHub Pages)
+                    <strong>Enable CORS Proxy below to work around this limitation.</strong>
+                </div>
+                <div class="proxy-toggle-container">
+                    <label class="proxy-toggle-label">Use CORS Proxy (for GitHub Pages):</label>
+                    <div class="proxy-toggle-switch" id="proxy-toggle-switch"></div>
                 </div>
                 <div class="color-toggle-container">
                     <label class="color-toggle-label">Button Colors:</label>
@@ -641,6 +691,9 @@ let VREDserver = "";
 // Protocol selection (http or https)
 let serverProtocol = "http";
 
+// CORS proxy enabled state
+let useProxy = false;
+
 // Color toggle state
 let colorReversed = false;
 
@@ -651,13 +704,32 @@ const initializeVREDserver = () => {
     
     if (ip) {
         VREDserver = `${ip}:${port}`;
+        console.log('Initialized VREDserver:', VREDserver);
+        
+        // If page is served from VRED server, also set protocol to match
+        if (window.location.hostname === ip && window.location.port === port) {
+            serverProtocol = window.location.protocol.replace(':', ''); // 'http' or 'https'
+            console.log('Auto-detected protocol:', serverProtocol);
+        }
     } else {
         // If no IP detected, use empty string - user will need to enter it
         VREDserver = `:${port}`;
+        console.log('No IP detected, VREDserver set to:', VREDserver);
     }
 };
 
-const getServer = () => `${serverProtocol}://${VREDserver}/pythonapi`;
+const getServer = () => {
+    const baseUrl = `${serverProtocol}://${VREDserver}/pythonapi`;
+    
+    // If using proxy and page is HTTPS with HTTP server, use CORS proxy
+    if (useProxy && window.location.protocol === 'https:' && serverProtocol === 'http') {
+        // Use a CORS proxy service - encode the URL
+        const encodedUrl = encodeURIComponent(baseUrl);
+        return `https://api.allorigins.win/raw?url=${encodedUrl}`;
+    }
+    
+    return baseUrl;
+};
 
 // Check for mixed content issues
 const checkMixedContent = () => {
@@ -667,7 +739,8 @@ const checkMixedContent = () => {
     const isPageHTTPS = window.location.protocol === 'https:';
     const isServerHTTP = serverProtocol === 'http';
     
-    if (isPageHTTPS && isServerHTTP) {
+    // Hide warning if proxy is enabled (that's the solution)
+    if (isPageHTTPS && isServerHTTP && !useProxy) {
         warning.classList.add('show');
         // Auto-open dropdown to show warning if on GitHub Pages
         if (window.location.hostname.includes('github.io')) {
@@ -727,11 +800,12 @@ console.log('Browser Info:', {
 
 // Fetch hotkeys data from server with Safari fallback
 const getText = async (url) => {
-    // Check for mixed content before attempting fetch
+    // Check for mixed content before attempting fetch (unless using proxy)
     const isPageHTTPS = window.location.protocol === 'https:';
     const isUrlHTTP = url.startsWith('http://');
+    const isProxyUrl = url.includes('allorigins.win');
     
-    if (isPageHTTPS && isUrlHTTP) {
+    if (isPageHTTPS && isUrlHTTP && !isProxyUrl && !useProxy) {
         console.error('Mixed Content Blocked: Cannot load HTTP resource from HTTPS page');
         showMixedContentError();
         return;
@@ -1131,12 +1205,21 @@ const getValueFromSource = (inputId, storageKey, regex, extractFromVREDserver, d
 
 // Get IP address function - tries multiple methods
 const getIPAddress = () => {
-    // Special case: try hostname first
+    // First priority: if page is served from VRED server, use current hostname
     const hostname = window.location.hostname;
     if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        console.log('Auto-detected IP from hostname:', hostname);
         return hostname;
     }
     
+    // Second priority: check if port matches VRED server pattern and hostname is IP-like
+    const port = window.location.port;
+    if (port && /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        console.log('Auto-detected IP from URL:', hostname);
+        return hostname;
+    }
+    
+    // Third priority: try input field, localStorage, or VREDserver variable
     return getValueFromSource(
         'ip-address-input',
         'vredServerIP',
@@ -1154,6 +1237,18 @@ const getIPAddress = () => {
 
 // Get port number function
 const getPort = () => {
+    // First priority: if page is served from VRED server, use current port
+    const currentPort = window.location.port;
+    if (currentPort && /^\d+$/.test(currentPort)) {
+        // Only use current port if hostname is an IP address (likely VRED server)
+        const hostname = window.location.hostname;
+        if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+            console.log('Auto-detected port from URL:', currentPort);
+            return currentPort;
+        }
+    }
+    
+    // Second priority: try input field, localStorage, or VREDserver variable
     return getValueFromSource(
         'port-input',
         'vredServerPort',
@@ -1165,7 +1260,7 @@ const getPort = () => {
             }
             return null;
         },
-        '8888'
+        '8888' // Default fallback
     );
 };
 
@@ -1381,6 +1476,35 @@ const initApp = () => {
     
     // Check for mixed content on load
     checkMixedContent();
+    
+    // Set up proxy toggle switch
+    const proxyToggle = document.getElementById('proxy-toggle-switch');
+    if (proxyToggle) {
+        // Load saved preference - auto-enable if on GitHub Pages with HTTP server
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const savedProxyState = getLocalStorage('useProxy', isGitHubPages ? 'true' : 'false');
+        useProxy = savedProxyState === 'true';
+        
+        if (useProxy) {
+            proxyToggle.classList.add('active');
+        }
+        
+        // Toggle on click
+        proxyToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            useProxy = !useProxy;
+            proxyToggle.classList.toggle('active', useProxy);
+            setLocalStorage('useProxy', useProxy ? 'true' : 'false');
+            
+            // Update mixed content warning
+            checkMixedContent();
+            
+            // Reload data with new proxy setting
+            if (VREDserver) {
+                loadData();
+            }
+        });
+    }
     
     // Set up color toggle switch
     const colorToggle = document.getElementById('color-toggle-switch');
