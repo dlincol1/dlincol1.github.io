@@ -605,12 +605,12 @@ iframe {
                     <button type="button" class="protocol-button" data-protocol="https" id="protocol-https">HTTPS</button>
                 </div>
                 <div class="mixed-content-warning" id="mixed-content-warning">
-                    <strong>⚠️ Mixed Content Warning</strong>
-                    This page is served over HTTPS, but you're trying to connect to an HTTP server. Browsers block mixed content for security.<br><br>
+                    <strong>⚠️ Mixed Content Blocked</strong>
+                    This page is served over HTTPS (GitHub Pages), but you're trying to connect to an HTTP server. Browsers block mixed content for security.<br><br>
                     <strong>Solutions:</strong><br>
-                    • Serve this page over HTTP instead of HTTPS<br>
-                    • Configure your VRED server to use HTTPS<br>
-                    • Use a local development server (localhost is often exempt)
+                    • <strong>Download and serve locally:</strong> Download this HTML file and open it via <code>file://</code> or a local HTTP server<br>
+                    • <strong>Configure VRED server for HTTPS:</strong> Set up SSL/TLS on your VRED server and use the HTTPS protocol above<br>
+                    • <strong>Use a local web server:</strong> Serve this page from a local HTTP server (not GitHub Pages)
                 </div>
                 <div class="color-toggle-container">
                     <label class="color-toggle-label">Button Colors:</label>
@@ -669,6 +669,15 @@ const checkMixedContent = () => {
     
     if (isPageHTTPS && isServerHTTP) {
         warning.classList.add('show');
+        // Auto-open dropdown to show warning if on GitHub Pages
+        if (window.location.hostname.includes('github.io')) {
+            const dropdown = document.getElementById('ip-dropdown');
+            if (dropdown && !dropdown.classList.contains('show')) {
+                setTimeout(() => {
+                    dropdown.classList.add('show');
+                }, 500);
+            }
+        }
     } else {
         warning.classList.remove('show');
     }
@@ -706,6 +715,16 @@ let pythonInputElement = null;
 
 // Fetch hotkeys data from server
 const getText = async (url) => {
+    // Check for mixed content before attempting fetch
+    const isPageHTTPS = window.location.protocol === 'https:';
+    const isUrlHTTP = url.startsWith('http://');
+    
+    if (isPageHTTPS && isUrlHTTP) {
+        console.error('Mixed Content Blocked: Cannot load HTTP resource from HTTPS page');
+        showMixedContentError();
+        return;
+    }
+    
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -724,11 +743,31 @@ const getText = async (url) => {
         processHotkeyData(text);
     } catch (error) {
         console.error('Error fetching hotkeys:', error);
-        // Show error to user on mobile
-        if (window.innerWidth <= 768) {
-            console.warn('Failed to fetch hotkeys. Please check server connection.');
+        
+        // Check if it's a mixed content error
+        if (error.message && (error.message.includes('Mixed Content') || error.message.includes('blocked'))) {
+            showMixedContentError();
+        } else {
+            // Show error to user on mobile
+            if (window.innerWidth <= 768) {
+                console.warn('Failed to fetch hotkeys. Please check server connection.');
+            }
         }
     }
+};
+
+// Show mixed content error message
+const showMixedContentError = () => {
+    const warning = document.getElementById('mixed-content-warning');
+    if (warning) {
+        warning.classList.add('show');
+        // Scroll warning into view if dropdown is open
+        const dropdown = document.getElementById('ip-dropdown');
+        if (dropdown && dropdown.classList.contains('show')) {
+            warning.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+    console.error('Mixed Content Error: The page is served over HTTPS but trying to connect to HTTP server. Please use HTTPS for the VRED server or serve this page over HTTP.');
 };
 
 // Process and display hotkey data
@@ -798,7 +837,8 @@ const loadData = () => {
     if (serverInput) {
         serverInput.value = VREDserver;
     }
-    getText(`http://${VREDserver}/pythonapi?value=print(hotkeyDict)`);
+    // Use getServer() to respect protocol selection
+    getText(`${getServer()}?value=print(hotkeyDict)`);
 };
 
 const updatehotkeys = () => {
@@ -1319,4 +1359,3 @@ window.addEventListener('orientationchange', () => {
 </script>
 </body>
 </html>
-
