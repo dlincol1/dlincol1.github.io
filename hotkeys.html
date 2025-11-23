@@ -208,6 +208,58 @@ body {
     flex-shrink: 0;
 }
 
+.protocol-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.protocol-button {
+    flex: 1;
+    padding: 10px 12px;
+    background: #1c1c1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.protocol-button:hover {
+    background: #2c2c2e;
+}
+
+.protocol-button.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #000000;
+    font-weight: 600;
+}
+
+.mixed-content-warning {
+    padding: 12px;
+    background: rgba(255, 59, 48, 0.1);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    border-radius: 8px;
+    color: #ff3b30;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-top: 8px;
+    display: none;
+}
+
+.mixed-content-warning.show {
+    display: block;
+}
+
+.mixed-content-warning strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
 .color-toggle-container {
     display: flex;
     align-items: center;
@@ -547,6 +599,19 @@ iframe {
                     <input type="text" class="ip-dropdown-input ip-field" id="ip-address-input" placeholder="IP Address">
                     <input type="text" class="ip-dropdown-input port-field" id="port-input" value="8888" placeholder="Port">
                 </div>
+                <div class="protocol-selector">
+                    <label class="ip-dropdown-label" style="margin-bottom: 0; flex: 0 0 auto; margin-right: 8px;">Protocol:</label>
+                    <button type="button" class="protocol-button" data-protocol="http" id="protocol-http">HTTP</button>
+                    <button type="button" class="protocol-button" data-protocol="https" id="protocol-https">HTTPS</button>
+                </div>
+                <div class="mixed-content-warning" id="mixed-content-warning">
+                    <strong>⚠️ Mixed Content Warning</strong>
+                    This page is served over HTTPS, but you're trying to connect to an HTTP server. Browsers block mixed content for security.<br><br>
+                    <strong>Solutions:</strong><br>
+                    • Serve this page over HTTP instead of HTTPS<br>
+                    • Configure your VRED server to use HTTPS<br>
+                    • Use a local development server (localhost is often exempt)
+                </div>
                 <div class="color-toggle-container">
                     <label class="color-toggle-label">Button Colors:</label>
                     <div class="color-toggle-switch" id="color-toggle-switch"></div>
@@ -573,6 +638,9 @@ iframe {
 // VREDserver variable - automatically determined or from textfield value
 let VREDserver = "";
 
+// Protocol selection (http or https)
+let serverProtocol = "http";
+
 // Color toggle state
 let colorReversed = false;
 
@@ -589,7 +657,22 @@ const initializeVREDserver = () => {
     }
 };
 
-const getServer = () => `http://${VREDserver}/pythonapi`;
+const getServer = () => `${serverProtocol}://${VREDserver}/pythonapi`;
+
+// Check for mixed content issues
+const checkMixedContent = () => {
+    const warning = document.getElementById('mixed-content-warning');
+    if (!warning) return;
+    
+    const isPageHTTPS = window.location.protocol === 'https:';
+    const isServerHTTP = serverProtocol === 'http';
+    
+    if (isPageHTTPS && isServerHTTP) {
+        warning.classList.add('show');
+    } else {
+        warning.classList.remove('show');
+    }
+};
 
 // Helper function to get/initialize serverInputElement
 const getServerInput = () => {
@@ -960,6 +1043,10 @@ const updateVREDserver = () => {
     // Save to localStorage for future use
     setLocalStorage('vredServerIP', ip);
     setLocalStorage('vredServerPort', port);
+    setLocalStorage('vredServerProtocol', serverProtocol);
+    
+    // Check for mixed content issues
+    checkMixedContent();
     
     // Update form server input
     const serverInput = getServerInput();
@@ -974,6 +1061,27 @@ const updateVREDserver = () => {
     
     // Reload hotkeys data with new server
     loadData();
+};
+
+// Update protocol selection
+const updateProtocol = (protocol) => {
+    serverProtocol = protocol;
+    
+    // Update button states
+    const httpBtn = document.getElementById('protocol-http');
+    const httpsBtn = document.getElementById('protocol-https');
+    
+    if (httpBtn && httpsBtn) {
+        httpBtn.classList.toggle('active', protocol === 'http');
+        httpsBtn.classList.toggle('active', protocol === 'https');
+    }
+    
+    // Save to localStorage
+    setLocalStorage('vredServerProtocol', protocol);
+    
+    // Check for mixed content and update server
+    checkMixedContent();
+    updateVREDserver();
 };
 
 // Toggle color scheme for key badges
@@ -1086,6 +1194,37 @@ const initApp = () => {
             e.stopPropagation();
         });
     }
+    
+    // Set up protocol selector
+    const httpBtn = document.getElementById('protocol-http');
+    const httpsBtn = document.getElementById('protocol-https');
+    
+    // Load saved protocol preference (default to http)
+    const savedProtocol = getLocalStorage('vredServerProtocol', 'http');
+    serverProtocol = savedProtocol;
+    
+    // Auto-detect: if page is HTTPS, prefer HTTPS for server
+    if (window.location.protocol === 'https:' && savedProtocol === 'http') {
+        // Keep HTTP as default, but user can switch
+    }
+    
+    if (httpBtn && httpsBtn) {
+        httpBtn.classList.toggle('active', serverProtocol === 'http');
+        httpsBtn.classList.toggle('active', serverProtocol === 'https');
+        
+        httpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateProtocol('http');
+        });
+        
+        httpsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateProtocol('https');
+        });
+    }
+    
+    // Check for mixed content on load
+    checkMixedContent();
     
     // Set up color toggle switch
     const colorToggle = document.getElementById('color-toggle-switch');
