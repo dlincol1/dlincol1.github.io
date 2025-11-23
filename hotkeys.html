@@ -199,12 +199,19 @@ body {
     align-items: center;
 }
 
+.ip-field-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
 .ip-dropdown-input.ip-field {
     flex: 1;
 }
 
 .ip-dropdown-input.port-field {
-    width: 100px;
+    width: 70px;
     flex-shrink: 0;
 }
 
@@ -600,9 +607,11 @@ iframe {
         <div class="hamburger-button" id="hamburger-btn">
             <div class="fire-icon">🔥</div>
             <div class="ip-dropdown" id="ip-dropdown">
-                <label class="ip-dropdown-label">VRED Web Server IP Address & Port:</label>
+                <label class="ip-dropdown-label">VRED Web Server</label>
                 <div class="ip-dropdown-fields">
+                    <label class="ip-field-label">IP:</label>
                     <input type="text" class="ip-dropdown-input ip-field" id="ip-address-input" placeholder="IP Address">
+                    <label class="ip-field-label">Port:</label>
                     <input type="text" class="ip-dropdown-input port-field" id="port-input" value="8888" placeholder="Port">
                 </div>
                 <div class="protocol-selector">
