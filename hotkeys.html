@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="Dan Lincoln">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darkline Studios</title>
+
+<style>
+:root {
+    --bg-color: #000000;
+    --card-bg: #1c1c1e;
+    --card-bg-hover: #2c2c2e;
+    --header-bg: #2c2c2e;
+    --text-primary: #D8D8D8;
+    --text-secondary: #8e8e93;
+    --accent-color: #F3A63F;
+    --accent-hover: #d8942f;
+    --separator: rgba(255, 255, 255, 0.1);
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+body {
+    background: var(--bg-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-primary);
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: none;
+}
+
+.container {
+    max-width: 100%;
+    margin: 0;
+    padding: 88px 0 8px 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    box-sizing: border-box;
+    touch-action: pan-y;
+    position: relative;
+}
+
+.container::after {
+    content: '';
+    display: block;
+    height: 40px;
+    width: 100%;
+}
+
+.header {
+    background: var(--header-bg);
+    border-radius: 0;
+    padding: 10px 0;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 80px;
+    min-height: 80px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    box-sizing: border-box;
+    touch-action: pan-y;
+}
+
+.header-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 20px 0 40px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    box-sizing: border-box;
+}
+
+.header-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--accent-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #D8D8D8;
+    flex-shrink: 0;
+}
+
+.hamburger-button {
+    width: 64px;
+    height: 64px;
+    background: #000000;
+    border: 1px solid #F8F8FF;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 16px;
+    box-shadow: 0 2px 4px var(--shadow);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.hamburger-button:active {
+    background: #333333;
+    transform: scale(0.98);
+}
+
+.fire-icon {
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.hamburger-button {
+    position: relative;
+}
+
+.ip-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--header-bg);
+    border-radius: 12px;
+    padding: 16px;
+    min-width: 280px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ip-dropdown.show {
+    display: flex;
+}
+
+.ip-dropdown-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.ip-dropdown-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #1c1c1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.ip-dropdown-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.ip-dropdown-fields {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ip-dropdown-input.ip-field {
+    flex: 1;
+}
+
+.ip-dropdown-input.port-field {
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.color-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--separator);
+    margin-top: 4px;
+}
+
+.color-toggle-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.color-toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    background: #1c1c1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.color-toggle-switch.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.color-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #D8D8D8;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.color-toggle-switch.active::after {
+    transform: translateX(22px);
+}
+
+
+.header-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+}
+
+.header-logo {
+    max-height: 36px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.header-subtitle {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: -0.1px;
+    margin-top: 2px;
+    text-decoration: none;
+    display: inline-block;
+    transition: color 0.2s ease;
+}
+
+.header-subtitle:hover {
+    color: var(--text-primary);
+}
+
+.header-title-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-title .accent {
+    color: #ff3b30;
+}
+
+.list {
+    background: #000000;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 8px 20px 60px 20px;
+    padding: 0;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #3a3a3a;
+    transition: background-color 0.15s ease;
+    border-bottom: 0.5px solid var(--separator);
+    -webkit-tap-highlight-color: transparent;
+    min-height: 80px;
+    box-sizing: border-box;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.list-item.row-even {
+    background-color: #2d2d2d;
+}
+
+.list-item.row-odd {
+    background-color: #3a3a3a;
+}
+
+.list-item:active {
+    background: #4a4a4a !important;
+}
+
+.list-item.row-even:active {
+    background: #3d3d3d !important;
+}
+
+.list-item.pressed {
+    background: #4f4f4f !important;
+    transform: scale(0.98);
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.list-item.row-even.pressed {
+    background: #424242 !important;
+}
+
+.list-item.pressed .key-badge {
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+    transform: scale(0.98);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.list-item.pressed .key-badge.reversed {
+    background: linear-gradient(145deg, #d0d0d0, #c0c0c0);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.list-item.pressed .key-label {
+    color: #D8D8D8;
+    font-weight: 500;
+}
+
+.key-badge {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(145deg, #1a1a1a, #000000);
+    border: 1px solid #F8F8FF;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 600;
+    color: #D8D8D8;
+    flex-shrink: 0;
+    margin-right: 16px;
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+    transition: background-color 0.1s ease, box-shadow 0.2s ease, transform 0.1s ease, color 0.2s ease;
+    position: relative;
+}
+
+.key-badge.reversed {
+    background: linear-gradient(145deg, #ffffff, #e0e0e0);
+    color: #000000;
+    border: 1px solid #000000;
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.2),
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.key-badge.submitting {
+    background: linear-gradient(145deg, #ffb84d, #F3A63F);
+    box-shadow: 
+        0 4px 8px rgba(243, 166, 63, 0.4),
+        0 2px 4px rgba(243, 166, 63, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.key-label {
+    flex: 1;
+    font-size: 19px;
+    font-weight: 400;
+    color: #D8D8D8;
+    background-color: inherit;
+    padding: 8px 12px;
+    border-radius: 8px;
+    letter-spacing: -0.2px;
+}
+
+.list-item[data-key] {
+    display: none;
+}
+
+.list-item[data-key].has-assignment {
+    display: flex;
+}
+
+.hidden {
+    visibility: hidden;
+    overflow: hidden;
+    position: absolute;
+}
+
+iframe {
+    width: 100%;
+    display: none;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+    .container {
+        padding: 104px 0 8px 0;
+    }
+    
+    .header {
+        padding: 12px 0;
+        border-radius: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 96px;
+        min-height: 96px;
+    }
+    
+    .header-content {
+        padding: 0 20px 0 40px;
+    }
+    
+    .header-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 26px;
+    }
+    
+    .header-title {
+        font-size: 26px;
+    }
+    
+    .header-logo {
+        max-height: 32px;
+    }
+    
+    .header-subtitle {
+        font-size: 19px;
+    }
+    
+    .hamburger-button {
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        margin-right: 16px;
+    }
+    
+    .fire-icon {
+        font-size: 36px;
+    }
+    
+    .list {
+        border-radius: 12px;
+    }
+    
+    .list-item {
+        padding: 12px 20px;
+        min-height: 96px;
+    }
+    
+    .key-badge {
+        width: 72px;
+        height: 72px;
+        font-size: 30px;
+        margin-right: 16px;
+        border-radius: 14px;
+    }
+    
+    .key-label {
+        font-size: 21px;
+    }
+}
+
+/* Smooth animations */
+@supports (backdrop-filter: blur(20px)) {
+    .list {
+        backdrop-filter: blur(20px);
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<div class="header">
+    <div class="header-content">
+        <div class="hamburger-button" id="hamburger-btn">
+            <div class="fire-icon">🔥</div>
+            <div class="ip-dropdown" id="ip-dropdown">
+                <label class="ip-dropdown-label">VRED Web Server IP Address & Port:</label>
+                <div class="ip-dropdown-fields">
+                    <input type="text" class="ip-dropdown-input ip-field" id="ip-address-input" placeholder="IP Address">
+                    <input type="text" class="ip-dropdown-input port-field" id="port-input" value="8888" placeholder="Port">
+                </div>
+                <div class="color-toggle-container">
+                    <label class="color-toggle-label">Reverse Button Colors:</label>
+                    <div class="color-toggle-switch" id="color-toggle-switch"></div>
+                </div>
+            </div>
+        </div>
+        <div class="header-title-container">
+            <img src="img/LOGO_LIGHT.png" alt="Darkline Studios" class="header-logo">
+            <a href="hotkeys.html" class="header-subtitle">Hotkeys</a>
+        </div>
+    </div>
+</div>
+
+<div class="list" id="hotkey-list"></div>
+
+<form id="FORM" method="get" target="output" action="" style="display: none;">
+<input type="hidden" name="host" id="SERVER">
+<input type="hidden" name="value" id="PYTHON">
+</form>
+<div class="hidden"><iframe id="output" name="output" src=""></iframe></div>
+</div>
+
+<script>
+// VREDserver variable - automatically determined or from textfield value
+let VREDserver = "";
+
+// Color toggle state
+let colorReversed = false;
+
+// Initialize VREDserver on page load
+const initializeVREDserver = () => {
+    const ip = getIPAddress();
+    const port = getPort();
+    
+    if (ip) {
+        VREDserver = `${ip}:${port}`;
+    } else {
+        // If no IP detected, use empty string - user will need to enter it
+        VREDserver = `:${port}`;
+    }
+};
+
+const getServer = () => `http://${VREDserver}/pythonapi`;
+
+// Helper function to ensure form action is HTTP
+const setFormActionHTTP = () => {
+    if (!formElement) return;
+    const httpUrl = getServer();
+    formElement.action = httpUrl;
+    if (formElement.action.startsWith('https://')) {
+        formElement.action = formElement.action.replace('https://', 'http://');
+    }
+};
+
+// Helper function to get/initialize serverInputElement
+const getServerInput = () => {
+    if (!serverInputElement) {
+        serverInputElement = document.getElementById('SERVER');
+    }
+    return serverInputElement;
+};
+
+// Helper function for localStorage operations
+const getLocalStorage = (key, defaultValue = null) => {
+    try {
+        const value = localStorage.getItem(key);
+        return value !== null ? value : defaultValue;
+    } catch (e) {
+        return defaultValue;
+    }
+};
+
+const setLocalStorage = (key, value) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        // localStorage not available, continue
+    }
+};
+
+// Form element references (initialized in DOMContentLoaded)
+let formElement = null;
+let pythonInputElement = null;
+
+// Fetch hotkeys data from server
+const getText = async (url) => {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const text = await response.text();
+        console.log('VRED Response:', text); // Debug: log the response
+        processHotkeyData(text);
+    } catch (error) {
+        console.error('Error fetching hotkeys:', error);
+    }
+};
+
+// Process and display hotkey data
+const processHotkeyData = (text) => {
+    // First, hide all key rows and remove alternating classes
+    const allKeyRows = document.querySelectorAll('.list-item[data-key]');
+    allKeyRows.forEach(row => {
+        row.classList.remove('has-assignment');
+        row.classList.remove('row-odd', 'row-even');
+    });
+    
+    // Clean up text to store hotkeys and vset names
+    const startIndex = text.lastIndexOf("{") + 1;
+    const endIndex = text.indexOf("}");
+    if (startIndex === 0 || endIndex === -1) return;
+    
+    let cleanedText = text.substring(startIndex, endIndex)
+        .replace(/, /g, ',')
+        .replace(/,/g, '\n');
+    
+    const supported = /^[A-Z0-9]$/;
+    const hotkeyMap = new Map();
+    
+    // First pass: build a map of key -> vset
+    cleanedText.split("\n").forEach(line => {
+        const [keyPart, ...valueParts] = line.split(':');
+        if (!keyPart || valueParts.length === 0) return;
+        
+        const vKey = keyPart.replace(/'/g, '');
+        const vSet = valueParts.join(':').replace(/'/g, '').replace(/^ /, '');
+        
+        if (supported.test(vKey) && vSet?.trim()) {
+            hotkeyMap.set(vKey, vSet);
+        }
+    });
+    
+    // Second pass: process in DOM order to maintain correct alternating
+    let visibleIndex = 0;
+    allKeyRows.forEach(row => {
+        const key = row.dataset.key;
+        const element = document.getElementById(key);
+        const vSet = hotkeyMap.get(key);
+        
+        if (element && row && vSet) {
+            element.textContent = vSet;
+            row.classList.add('has-assignment');
+            // Add alternating class based on visible position in DOM order
+            if (visibleIndex % 2 === 0) {
+                row.classList.add('row-odd');
+                row.classList.remove('row-even');
+            } else {
+                row.classList.add('row-even');
+                row.classList.remove('row-odd');
+            }
+            visibleIndex++;
+        } else if (element) {
+            element.textContent = '';
+        }
+    });
+};
+
+// Server input element reference
+let serverInputElement = null;
+
+const loadData = () => {
+    const serverInput = getServerInput();
+    if (serverInput) {
+        serverInput.value = VREDserver;
+    }
+    getText(`http://${VREDserver}/pythonapi?value=print(hotkeyDict)`);
+};
+
+const updatehotkeys = () => {
+    if (!formElement || !pythonInputElement) return;
+    
+    // Ensure server input is set
+    const serverInput = getServerInput();
+    if (serverInput) {
+        serverInput.value = VREDserver;
+    }
+    
+    // Force HTTP - explicitly set action to HTTP URL
+    setFormActionHTTP();
+    
+    // Build Python code with proper indentation - form submission preserves formatting
+    // Using consistent 4-space indentation throughout
+    const pythonCode = `vset_names = getVariantSets()
+hotkeys_all = []
+hotkeys_single = []
+hotkeyDict = {}
+for j in vset_names:
+    v = getVariantSet(j)
+    hotkey = v.getHotkey()
+    if hotkey is not None:
+        hotkeys_all.append(hotkey)
+        single_key = hotkey.strip()
+        if len(single_key) == 1:
+            hotkeys_single.append(single_key)
+        hotkeyDict[hotkey] = j
+hotkeys_all.sort()
+hotkeys_single.sort()`;
+    
+    // Submit form - this preserves Python syntax and indentation
+    pythonInputElement.value = pythonCode;
+    formElement.submit();
+    
+    // Fetch the dictionary after execution
+    setTimeout(loadData, 1500);
+};
+
+const sendKey = (key) => {
+    const keyElement = document.getElementById(key);
+    if (!formElement || !pythonInputElement || !keyElement) return;
+    
+    // Find the key badge and animate it
+    const row = document.querySelector(`.list-item[data-key="${key}"]`);
+    const keyBadge = row ? row.querySelector('.key-badge') : null;
+    
+    // Force HTTP - explicitly set action to HTTP URL
+    setFormActionHTTP();
+    
+    const vsName = keyElement.textContent;
+    pythonInputElement.value = `selectVariantSet('${vsName}')`;
+    
+    // Animate button color from black to orange
+    if (keyBadge) {
+        keyBadge.classList.add('submitting');
+        // Fade back to black after animation
+        setTimeout(() => {
+            keyBadge.classList.remove('submitting');
+        }, 800);
+    }
+    
+    formElement.submit();
+};
+
+// Prevent pull-to-refresh gesture and page movement
+let touchStartY = 0;
+let touchStartScrollTop = 0;
+
+const getContainerElement = () => document.querySelector('.container');
+
+document.addEventListener('touchstart', (e) => {
+    const containerElement = getContainerElement();
+    touchStartY = e.touches[0].clientY;
+    if (containerElement) {
+        touchStartScrollTop = containerElement.scrollTop;
+    }
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+    const containerElement = getContainerElement();
+    if (containerElement) {
+        const currentY = e.touches[0].clientY;
+        const scrollTop = containerElement.scrollTop;
+        
+        // Prevent pull-to-refresh when at top and pulling down
+        if (scrollTop === 0 && currentY > touchStartY) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Prevent overscroll bounce at bottom
+        const scrollHeight = containerElement.scrollHeight;
+        const clientHeight = containerElement.clientHeight;
+        if (scrollTop + clientHeight >= scrollHeight && currentY < touchStartY) {
+            e.preventDefault();
+            return false;
+        }
+    }
+}, { passive: false });
+
+// Generate hotkey list items
+const generateHotkeyList = () => {
+    const list = document.getElementById('hotkey-list');
+    if (!list) return;
+    
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 
+                  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 
+                  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 
+                  'U', 'V', 'W', 'X', 'Y', 'Z'];
+    
+    keys.forEach(key => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.dataset.key = key;
+        const badgeClass = colorReversed ? 'key-badge reversed' : 'key-badge';
+        item.innerHTML = `<div class="${badgeClass}">${key}</div><div class="key-label" id="${key}"></div>`;
+        list.appendChild(item);
+    });
+};
+
+// Helper to get value from input field, localStorage, or VREDserver
+const getValueFromSource = (inputId, storageKey, regex, extractFromVREDserver, defaultValue = '') => {
+    // First, try to get from text field if it has a value
+    const input = document.getElementById(inputId);
+    if (input && input.value.trim()) {
+        const value = input.value.trim();
+        if (regex.test(value)) {
+            return value;
+        }
+    }
+    
+    // Try to get from localStorage
+    const saved = getLocalStorage(storageKey);
+    if (saved && regex.test(saved)) {
+        return saved;
+    }
+    
+    // Try to get from VREDserver variable
+    if (VREDserver) {
+        const match = extractFromVREDserver(VREDserver);
+        if (match) {
+            return match;
+        }
+    }
+    
+    return defaultValue;
+};
+
+// Get IP address function - tries multiple methods
+const getIPAddress = () => {
+    // Special case: try hostname first
+    const hostname = window.location.hostname;
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        return hostname;
+    }
+    
+    return getValueFromSource(
+        'ip-address-input',
+        'vredServerIP',
+        /^\d+\.\d+\.\d+\.\d+$/,
+        (vred) => {
+            if (vred.includes('.')) {
+                const match = vred.match(/\d+\.\d+\.\d+\.\d+/);
+                return match ? match[0] : null;
+            }
+            return null;
+        },
+        ''
+    );
+};
+
+// Get port number function
+const getPort = () => {
+    return getValueFromSource(
+        'port-input',
+        'vredServerPort',
+        /^\d+$/,
+        (vred) => {
+            if (vred.includes(':')) {
+                const match = vred.match(/:(\d+)/);
+                return match ? match[1] : null;
+            }
+            return null;
+        },
+        '8888'
+    );
+};
+
+// Update VREDserver based on IP and port inputs
+const updateVREDserver = () => {
+    const ipInput = document.getElementById('ip-address-input');
+    const portInput = document.getElementById('port-input');
+    
+    if (!ipInput || !portInput) return;
+    
+    const ip = ipInput.value.trim();
+    const port = portInput.value.trim();
+    
+    if (!ip || !port) return;
+    
+    VREDserver = `${ip}:${port}`;
+    
+    // Save to localStorage for future use
+    setLocalStorage('vredServerIP', ip);
+    setLocalStorage('vredServerPort', port);
+    
+    // Update form server input
+    const serverInput = getServerInput();
+    if (serverInput) {
+        serverInput.value = VREDserver;
+    }
+    
+    // Update form action
+    setFormActionHTTP();
+    
+    // Reload hotkeys data with new server
+    loadData();
+};
+
+// Toggle color scheme for key badges
+const toggleKeyColors = (reversed) => {
+    const keyBadges = document.querySelectorAll('.key-badge');
+    keyBadges.forEach(badge => {
+        if (reversed) {
+            badge.classList.add('reversed');
+        } else {
+            badge.classList.remove('reversed');
+        }
+    });
+    setLocalStorage('keyColorReversed', reversed ? 'true' : 'false');
+};
+
+// Toggle IP dropdown
+const toggleIPDropdown = () => {
+    const dropdown = document.getElementById('ip-dropdown');
+    const ipInput = document.getElementById('ip-address-input');
+    const portInput = document.getElementById('port-input');
+    
+    if (dropdown && ipInput && portInput) {
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+        } else {
+            // Set current IP and port from VREDserver or auto-detect
+            const ip = getIPAddress();
+            const port = getPort();
+            ipInput.value = ip || '';
+            portInput.value = port || '8888';
+            dropdown.classList.add('show');
+        }
+    }
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('ip-dropdown');
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    
+    if (dropdown && hamburgerBtn) {
+        // Check if click is outside both the button and dropdown
+        const clickedInsideDropdown = dropdown.contains(e.target);
+        const clickedOnButton = hamburgerBtn.contains(e.target);
+        
+        if (!clickedInsideDropdown && !clickedOnButton) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
+
+// Event delegation for all key rows
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize form element references once
+    formElement = document.getElementById('FORM');
+    pythonInputElement = document.getElementById('PYTHON');
+    
+    // Set up hamburger button click handler
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleIPDropdown();
+        });
+    }
+    
+    // Initialize VREDserver first
+    initializeVREDserver();
+    
+    // Load color toggle state before generating hotkey list
+    const savedColorState = getLocalStorage('keyColorReversed', 'false');
+    colorReversed = savedColorState === 'true';
+    
+    // Set up IP address and port input change handlers
+    const ipInput = document.getElementById('ip-address-input');
+    const portInput = document.getElementById('port-input');
+    const dropdown = document.getElementById('ip-dropdown');
+    
+    if (ipInput && portInput) {
+        // Initialize inputs with detected or saved values
+        const ip = getIPAddress();
+        const port = getPort();
+        ipInput.value = ip || '';
+        portInput.value = port || '8888';
+        
+        // If we have an IP, update VREDserver
+        if (ip) {
+            updateVREDserver();
+        }
+        
+        // Helper to setup input event handlers
+        const setupInputHandlers = (input) => {
+            input.addEventListener('click', (e) => e.stopPropagation());
+            input.addEventListener('blur', () => updateVREDserver());
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.target.blur();
+                }
+            });
+        };
+        
+        setupInputHandlers(ipInput);
+        setupInputHandlers(portInput);
+    }
+    
+    // Prevent dropdown from closing when clicking inside it
+    if (dropdown) {
+        dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
+    
+    // Set up color toggle switch
+    const colorToggle = document.getElementById('color-toggle-switch');
+    if (colorToggle) {
+        // Load saved preference
+        const savedColorState = getLocalStorage('keyColorReversed', 'false');
+        colorReversed = savedColorState === 'true';
+        if (colorReversed) {
+            colorToggle.classList.add('active');
+        }
+        
+        // Apply saved color scheme
+        toggleKeyColors(colorReversed);
+        
+        // Toggle on click
+        colorToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            colorReversed = !colorReversed;
+            colorToggle.classList.toggle('active', colorReversed);
+            toggleKeyColors(colorReversed);
+        });
+    }
+    
+    // Set form action once - force HTTP
+    if (formElement) {
+        setFormActionHTTP();
+        // Prevent HTTPS upgrade by intercepting form submission
+        formElement.addEventListener('submit', () => setFormActionHTTP());
+    }
+    
+    // Generate hotkey list items
+    generateHotkeyList();
+    
+    // Use event delegation instead of individual listeners
+    const list = document.getElementById('hotkey-list');
+    if (list) {
+        let pressTimeout;
+        
+        list.addEventListener('touchstart', (e) => {
+            const row = e.target.closest('.list-item[data-key]');
+            if (row) row.classList.add('pressed');
+        }, { passive: true });
+        
+        list.addEventListener('touchend', (e) => {
+            const row = e.target.closest('.list-item[data-key]');
+            if (row) {
+                clearTimeout(pressTimeout);
+                pressTimeout = setTimeout(() => row.classList.remove('pressed'), 200);
+            }
+        }, { passive: true });
+        
+        list.addEventListener('click', (e) => {
+            const row = e.target.closest('.list-item[data-key]');
+            if (row) {
+                const key = row.dataset.key;
+                if (key) {
+                    row.classList.add('pressed');
+                    clearTimeout(pressTimeout);
+                    pressTimeout = setTimeout(() => row.classList.remove('pressed'), 300);
+                    sendKey(key);
+                }
+            }
+        });
+    }
+    
+    // Initialize on load
+    updatehotkeys();
+});
+</script>
+</body>
+</html>
+</html>
