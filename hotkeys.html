@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="author" content="Dan Lincoln">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Darkline Studios</title>
 
 <style>
@@ -33,8 +35,9 @@ html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    position: fixed;
     width: 100%;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -52,6 +55,8 @@ body {
     margin: 0;
     padding: 88px 0 8px 0;
     height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+    min-height: -webkit-fill-available;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -436,12 +441,23 @@ body {
 iframe {
     width: 100%;
     display: none;
+    border: 0;
+    visibility: hidden;
+}
+
+.hidden iframe {
+    width: 1px;
+    height: 1px;
+    position: absolute;
+    left: -9999px;
 }
 
 /* Mobile optimizations */
 @media (max-width: 480px) {
     .container {
         padding: 104px 0 8px 0;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
     }
     
     .header {
@@ -532,13 +548,13 @@ iframe {
                     <input type="text" class="ip-dropdown-input port-field" id="port-input" value="8888" placeholder="Port">
                 </div>
                 <div class="color-toggle-container">
-                    <label class="color-toggle-label">Reverse Button Colors:</label>
+                    <label class="color-toggle-label">Button Colors:</label>
                     <div class="color-toggle-switch" id="color-toggle-switch"></div>
                 </div>
             </div>
         </div>
         <div class="header-title-container">
-            <img src="LOGO_LIGHT.png" alt="Darkline Studios" class="header-logo">
+            <img src="img/LOGO_LIGHT.png" alt="Darkline Studios" class="header-logo">
             <a href="hotkeys.html" class="header-subtitle">Hotkeys</a>
         </div>
     </div>
@@ -573,17 +589,7 @@ const initializeVREDserver = () => {
     }
 };
 
-const getServer = () => `https://${VREDserver}/pythonapi`;
-
-// Helper function to ensure form action is HTTP
-const setFormActionHTTP = () => {
-    if (!formElement) return;
-    const httpUrl = getServer();
-    formElement.action = httpUrl;
-    if (formElement.action.startsWith('https://')) {
-        formElement.action = formElement.action.replace('https://', 'https://');
-    }
-};
+const getServer = () => `http://${VREDserver}/pythonapi`;
 
 // Helper function to get/initialize serverInputElement
 const getServerInput = () => {
@@ -618,7 +624,15 @@ let pythonInputElement = null;
 // Fetch hotkeys data from server
 const getText = async (url) => {
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'omit',
+            headers: {
+                'Accept': 'text/plain, */*',
+            }
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -627,6 +641,10 @@ const getText = async (url) => {
         processHotkeyData(text);
     } catch (error) {
         console.error('Error fetching hotkeys:', error);
+        // Show error to user on mobile
+        if (window.innerWidth <= 768) {
+            console.warn('Failed to fetch hotkeys. Please check server connection.');
+        }
     }
 };
 
@@ -697,7 +715,7 @@ const loadData = () => {
     if (serverInput) {
         serverInput.value = VREDserver;
     }
-    getText(`https://${VREDserver}/pythonapi?value=print(hotkeyDict)`);
+    getText(`http://${VREDserver}/pythonapi?value=print(hotkeyDict)`);
 };
 
 const updatehotkeys = () => {
@@ -709,8 +727,10 @@ const updatehotkeys = () => {
         serverInput.value = VREDserver;
     }
     
-    // Force HTTP - explicitly set action to HTTP URL
-    setFormActionHTTP();
+    // Set form action
+    if (formElement) {
+        formElement.action = getServer();
+    }
     
     // Build Python code with proper indentation - form submission preserves formatting
     // Using consistent 4-space indentation throughout
@@ -732,10 +752,24 @@ hotkeys_single.sort()`;
     
     // Submit form - this preserves Python syntax and indentation
     pythonInputElement.value = pythonCode;
-    formElement.submit();
     
-    // Fetch the dictionary after execution
-    setTimeout(loadData, 1500);
+    try {
+        formElement.submit();
+        // Fetch the dictionary after execution
+        setTimeout(loadData, 1500);
+    } catch (e) {
+        console.error('Form submission error in updatehotkeys:', e);
+        // Fallback: try direct fetch for Safari
+        const serverUrl = getServer();
+        fetch(`${serverUrl}?value=${encodeURIComponent(pythonCode)}`, {
+            method: 'GET',
+            mode: 'no-cors'
+        }).then(() => {
+            setTimeout(loadData, 1500);
+        }).catch(err => {
+            console.error('Fallback fetch error:', err);
+        });
+    }
 };
 
 const sendKey = (key) => {
@@ -746,10 +780,14 @@ const sendKey = (key) => {
     const row = document.querySelector(`.list-item[data-key="${key}"]`);
     const keyBadge = row ? row.querySelector('.key-badge') : null;
     
-    // Force HTTP - explicitly set action to HTTP URL
-    setFormActionHTTP();
+    // Set form action
+    if (formElement) {
+        formElement.action = getServer();
+    }
     
     const vsName = keyElement.textContent;
+    if (!vsName || !vsName.trim()) return; // Don't send if no variant set name
+    
     pythonInputElement.value = `selectVariantSet('${vsName}')`;
     
     // Animate button color from black to orange
@@ -761,7 +799,24 @@ const sendKey = (key) => {
         }, 800);
     }
     
-    formElement.submit();
+    // For Safari, ensure iframe is ready before submitting
+    const iframe = document.getElementById('output');
+    if (iframe) {
+        try {
+            formElement.submit();
+        } catch (e) {
+            console.error('Form submission error:', e);
+            // Fallback: try direct fetch for Safari
+            const serverUrl = getServer();
+            const pythonCode = pythonInputElement.value;
+            fetch(`${serverUrl}?value=${encodeURIComponent(pythonCode)}`, {
+                method: 'GET',
+                mode: 'no-cors'
+            }).catch(err => console.error('Fallback fetch error:', err));
+        }
+    } else {
+        formElement.submit();
+    }
 };
 
 // Prevent pull-to-refresh gesture and page movement
@@ -913,7 +968,9 @@ const updateVREDserver = () => {
     }
     
     // Update form action
-    setFormActionHTTP();
+    if (formElement) {
+        formElement.action = getServer();
+    }
     
     // Reload hotkeys data with new server
     loadData();
@@ -969,7 +1026,8 @@ document.addEventListener('click', (e) => {
 });
 
 // Event delegation for all key rows
-document.addEventListener('DOMContentLoaded', () => {
+// Use both DOMContentLoaded and immediate execution for Safari compatibility
+const initApp = () => {
     // Initialize form element references once
     formElement = document.getElementById('FORM');
     pythonInputElement = document.getElementById('PYTHON');
@@ -1051,11 +1109,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Set form action once - force HTTP
+    // Set form action once
     if (formElement) {
-        setFormActionHTTP();
-        // Prevent HTTPS upgrade by intercepting form submission
-        formElement.addEventListener('submit', () => setFormActionHTTP());
+        formElement.action = getServer();
     }
     
     // Generate hotkey list items
@@ -1093,12 +1149,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Initialize on load
-    updatehotkeys();
+    // Initialize on load - use requestAnimationFrame for Safari compatibility
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            updatehotkeys();
+        }, 100);
+    });
+};
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    // DOM already loaded
+    initApp();
+}
+
+// Fix Safari viewport height issue
+const setViewportHeight = () => {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+};
+
+// Set viewport height on load and resize
+setViewportHeight();
+window.addEventListener('resize', setViewportHeight);
+window.addEventListener('orientationchange', () => {
+    setTimeout(setViewportHeight, 100);
 });
 </script>
 </body>
 </html>
-
-</html>
-
