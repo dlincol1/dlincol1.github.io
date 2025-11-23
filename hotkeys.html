@@ -260,55 +260,6 @@ body {
     margin-bottom: 4px;
 }
 
-.proxy-toggle-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding-top: 8px;
-    border-top: 1px solid var(--separator);
-    margin-top: 4px;
-}
-
-.proxy-toggle-label {
-    font-size: 14px;
-    color: var(--text-secondary);
-    flex: 1;
-}
-
-.proxy-toggle-switch {
-    position: relative;
-    width: 48px;
-    height: 26px;
-    background: #1c1c1e;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 13px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    flex-shrink: 0;
-}
-
-.proxy-toggle-switch.active {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-.proxy-toggle-switch::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: #D8D8D8;
-    border-radius: 50%;
-    transition: transform 0.3s ease;
-}
-
-.proxy-toggle-switch.active::after {
-    transform: translateX(22px);
-}
-
 .color-toggle-container {
     display: flex;
     align-items: center;
@@ -656,11 +607,10 @@ iframe {
                 <div class="mixed-content-warning" id="mixed-content-warning">
                     <strong>⚠️ Mixed Content Blocked</strong>
                     This page is served over HTTPS (GitHub Pages), but you're trying to connect to an HTTP server. Browsers block mixed content for security.<br><br>
-                    <strong>Enable CORS Proxy below to work around this limitation.</strong>
-                </div>
-                <div class="proxy-toggle-container">
-                    <label class="proxy-toggle-label">Use CORS Proxy (for GitHub Pages):</label>
-                    <div class="proxy-toggle-switch" id="proxy-toggle-switch"></div>
+                    <strong>Solutions:</strong><br>
+                    • <strong>Download and serve locally:</strong> Download this HTML file and open it via <code>file://</code> or a local HTTP server<br>
+                    • <strong>Configure VRED server for HTTPS:</strong> Set up SSL/TLS on your VRED server and use the HTTPS protocol above<br>
+                    • <strong>Use a local web server:</strong> Serve this page from a local HTTP server (not GitHub Pages)
                 </div>
                 <div class="color-toggle-container">
                     <label class="color-toggle-label">Button Colors:</label>
@@ -677,7 +627,7 @@ iframe {
 
 <div class="list" id="hotkey-list"></div>
 
-<form id="FORM" method="get" target="output" action="" style="display: none;">
+<form id="FORM" method="post" target="output" action="" style="display: none;">
 <input type="hidden" name="host" id="SERVER">
 <input type="hidden" name="value" id="PYTHON">
 </form>
@@ -690,9 +640,6 @@ let VREDserver = "";
 
 // Protocol selection (http or https)
 let serverProtocol = "http";
-
-// CORS proxy enabled state
-let useProxy = false;
 
 // Color toggle state
 let colorReversed = false;
@@ -719,16 +666,7 @@ const initializeVREDserver = () => {
 };
 
 const getServer = () => {
-    const baseUrl = `${serverProtocol}://${VREDserver}/pythonapi`;
-    
-    // If using proxy and page is HTTPS with HTTP server, use CORS proxy
-    if (useProxy && window.location.protocol === 'https:' && serverProtocol === 'http') {
-        // Use a CORS proxy service - encode the URL
-        const encodedUrl = encodeURIComponent(baseUrl);
-        return `https://api.allorigins.win/raw?url=${encodedUrl}`;
-    }
-    
-    return baseUrl;
+    return `${serverProtocol}://${VREDserver}/pythonapi`;
 };
 
 // Check for mixed content issues
@@ -739,8 +677,7 @@ const checkMixedContent = () => {
     const isPageHTTPS = window.location.protocol === 'https:';
     const isServerHTTP = serverProtocol === 'http';
     
-    // Hide warning if proxy is enabled (that's the solution)
-    if (isPageHTTPS && isServerHTTP && !useProxy) {
+    if (isPageHTTPS && isServerHTTP) {
         warning.classList.add('show');
         // Auto-open dropdown to show warning if on GitHub Pages
         if (window.location.hostname.includes('github.io')) {
@@ -800,12 +737,11 @@ console.log('Browser Info:', {
 
 // Fetch hotkeys data from server with Safari fallback
 const getText = async (url) => {
-    // Check for mixed content before attempting fetch (unless using proxy)
+    // Check for mixed content before attempting fetch
     const isPageHTTPS = window.location.protocol === 'https:';
     const isUrlHTTP = url.startsWith('http://');
-    const isProxyUrl = url.includes('allorigins.win');
     
-    if (isPageHTTPS && isUrlHTTP && !isProxyUrl && !useProxy) {
+    if (isPageHTTPS && isUrlHTTP) {
         console.error('Mixed Content Blocked: Cannot load HTTP resource from HTTPS page');
         showMixedContentError();
         return;
@@ -1034,18 +970,23 @@ hotkeys_single.sort()`;
         // Fallback: try direct request for Safari
         const serverUrl = getServer();
         if (isSafari) {
-            // Use XMLHttpRequest for Safari
+            // Use XMLHttpRequest for Safari with POST
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `${serverUrl}?value=${encodeURIComponent(pythonCode)}`, true);
+            xhr.open('POST', serverUrl, true);
             xhr.timeout = 10000;
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
             xhr.onload = () => setTimeout(loadData, 1500);
             xhr.onerror = () => console.error('XHR fallback error');
-            xhr.send();
+            xhr.send(`value=${encodeURIComponent(pythonCode)}`);
         } else {
-            // Try fetch for other browsers
-            fetch(`${serverUrl}?value=${encodeURIComponent(pythonCode)}`, {
-                method: 'GET',
-                mode: 'no-cors'
+            // Try fetch for other browsers with POST
+            fetch(serverUrl, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `value=${encodeURIComponent(pythonCode)}`
             }).then(() => {
                 setTimeout(loadData, 1500);
             }).catch(err => {
@@ -1085,32 +1026,38 @@ const sendKey = (key) => {
     // For Safari, use XMLHttpRequest; otherwise try form submission
     const iframe = document.getElementById('output');
     if (isSafari && iframe) {
-        // Safari: Use XMLHttpRequest directly instead of form submission
+        // Safari: Use XMLHttpRequest directly with POST
         const serverUrl = getServer();
         const pythonCode = pythonInputElement.value;
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', `${serverUrl}?value=${encodeURIComponent(pythonCode)}`, true);
+        xhr.open('POST', serverUrl, true);
         xhr.timeout = 5000;
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
         xhr.onload = () => console.log('Key sent successfully');
         xhr.onerror = () => console.error('XHR error sending key');
-        xhr.send();
+        xhr.send(`value=${encodeURIComponent(pythonCode)}`);
     } else if (iframe) {
         try {
             formElement.submit();
         } catch (e) {
             console.error('Form submission error:', e);
-            // Fallback: try direct request
+            // Fallback: try direct request with POST
             const serverUrl = getServer();
             const pythonCode = pythonInputElement.value;
             if (isSafari) {
                 const xhr = new XMLHttpRequest();
-                xhr.open('GET', `${serverUrl}?value=${encodeURIComponent(pythonCode)}`, true);
+                xhr.open('POST', serverUrl, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.timeout = 5000;
-                xhr.send();
+                xhr.send(`value=${encodeURIComponent(pythonCode)}`);
             } else {
-                fetch(`${serverUrl}?value=${encodeURIComponent(pythonCode)}`, {
-                    method: 'GET',
-                    mode: 'no-cors'
+                fetch(serverUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `value=${encodeURIComponent(pythonCode)}`
                 }).catch(err => console.error('Fallback fetch error:', err));
             }
         }
@@ -1476,35 +1423,6 @@ const initApp = () => {
     
     // Check for mixed content on load
     checkMixedContent();
-    
-    // Set up proxy toggle switch
-    const proxyToggle = document.getElementById('proxy-toggle-switch');
-    if (proxyToggle) {
-        // Load saved preference - auto-enable if on GitHub Pages with HTTP server
-        const isGitHubPages = window.location.hostname.includes('github.io');
-        const savedProxyState = getLocalStorage('useProxy', isGitHubPages ? 'true' : 'false');
-        useProxy = savedProxyState === 'true';
-        
-        if (useProxy) {
-            proxyToggle.classList.add('active');
-        }
-        
-        // Toggle on click
-        proxyToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            useProxy = !useProxy;
-            proxyToggle.classList.toggle('active', useProxy);
-            setLocalStorage('useProxy', useProxy ? 'true' : 'false');
-            
-            // Update mixed content warning
-            checkMixedContent();
-            
-            // Reload data with new proxy setting
-            if (VREDserver) {
-                loadData();
-            }
-        });
-    }
     
     // Set up color toggle switch
     const colorToggle = document.getElementById('color-toggle-switch');
