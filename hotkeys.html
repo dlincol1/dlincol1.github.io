@@ -573,7 +573,7 @@ const initializeVREDserver = () => {
     }
 };
 
-const getServer = () => `http://${VREDserver}/pythonapi`;
+const getServer = () => `https://${VREDserver}/pythonapi`;
 
 // Helper function to ensure form action is HTTP
 const setFormActionHTTP = () => {
@@ -581,7 +581,7 @@ const setFormActionHTTP = () => {
     const httpUrl = getServer();
     formElement.action = httpUrl;
     if (formElement.action.startsWith('https://')) {
-        formElement.action = formElement.action.replace('https://', 'http://');
+        formElement.action = formElement.action.replace('https://', 'https://');
     }
 };
 
@@ -697,7 +697,7 @@ const loadData = () => {
     if (serverInput) {
         serverInput.value = VREDserver;
     }
-    getText(`http://${VREDserver}/pythonapi?value=print(hotkeyDict)`);
+    getText(`https://${VREDserver}/pythonapi?value=print(hotkeyDict)`);
 };
 
 const updatehotkeys = () => {
@@ -1101,3 +1101,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </html>
 
 </html>
+
