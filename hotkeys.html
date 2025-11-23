@@ -1610,5 +1610,103 @@ window.addEventListener('orientationchange', () => {
     setTimeout(setViewportHeight, 100);
 });
 </script>
+
+<!-- Mobile Console Viewer -->
+<div id="mobile-console" style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.95); color: #fff; font-family: 'Courier New', monospace; font-size: 11px; z-index: 99999; max-height: 50vh; display: none; border-top: 2px solid #F3A63F;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #1c1c1e; border-bottom: 1px solid #333;">
+        <strong style="color: #F3A63F;">Console Log</strong>
+        <div>
+            <button onclick="document.getElementById('mobile-console-content').innerHTML='';" style="background: #333; color: white; border: 1px solid #555; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 10px;">Clear</button>
+            <button onclick="document.getElementById('mobile-console').style.display='none'" style="background: #ff3b30; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px;">Close</button>
+        </div>
+    </div>
+    <div id="mobile-console-content" style="padding: 8px; overflow-y: auto; max-height: calc(50vh - 40px);"></div>
+</div>
+
+<script>
+// Mobile Console Override
+(function() {
+    const consoleDiv = document.getElementById('mobile-console-content');
+    const consoleContainer = document.getElementById('mobile-console');
+    let logCount = 0;
+    
+    // Show console button (floating)
+    const toggleBtn = document.createElement('button');
+    toggleBtn.innerHTML = '📱';
+    toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; width: 50px; height: 50px; background: #F3A63F; color: #000; border: none; border-radius: 50%; font-size: 20px; z-index: 99998; box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;';
+    toggleBtn.onclick = function() {
+        consoleContainer.style.display = consoleContainer.style.display === 'none' ? 'block' : 'none';
+    };
+    document.body.appendChild(toggleBtn);
+    
+    function addToConsole(type, args) {
+        logCount++;
+        if (logCount > 100) {
+            consoleDiv.innerHTML = '';
+            logCount = 0;
+        }
+        
+        const entry = document.createElement('div');
+        entry.style.cssText = 'margin-bottom: 4px; padding: 6px; border-left: 3px solid; word-break: break-word;';
+        
+        const colors = {
+            error: { bg: 'rgba(255, 59, 48, 0.2)', border: '#ff3b30', text: '#ff6b6b' },
+            warn: { bg: 'rgba(255, 149, 0, 0.2)', border: '#ff9500', text: '#ffb84d' },
+            log: { bg: 'rgba(52, 199, 89, 0.2)', border: '#34c759', text: '#5ac8fa' }
+        };
+        
+        const style = colors[type] || colors.log;
+        entry.style.borderLeftColor = style.border;
+        entry.style.background = style.bg;
+        entry.style.color = style.text;
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const message = Array.from(args).map(arg => {
+            if (typeof arg === 'object') {
+                try {
+                    return JSON.stringify(arg, null, 2);
+                } catch(e) {
+                    return String(arg);
+                }
+            }
+            return String(arg);
+        }).join(' ');
+        
+        entry.innerHTML = `<span style="color: #888; font-size: 9px;">[${timestamp}]</span> <span style="font-weight: bold; color: ${style.border};">[${type.toUpperCase()}]</span> ${message}`;
+        consoleDiv.appendChild(entry);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+    
+    // Override console methods
+    const originalLog = console.log;
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    
+    console.log = function(...args) {
+        originalLog.apply(console, args);
+        addToConsole('log', args);
+    };
+    
+    console.error = function(...args) {
+        originalError.apply(console, args);
+        addToConsole('error', args);
+    };
+    
+    console.warn = function(...args) {
+        originalWarn.apply(console, args);
+        addToConsole('warn', args);
+    };
+    
+    // Catch unhandled errors
+    window.addEventListener('error', function(e) {
+        addToConsole('error', [`${e.message} at ${e.filename}:${e.lineno}`]);
+    });
+    
+    // Catch unhandled promise rejections
+    window.addEventListener('unhandledrejection', function(e) {
+        addToConsole('error', [`Unhandled Promise Rejection: ${e.reason}`]);
+    });
+})();
+</script>
 </body>
 </html>
